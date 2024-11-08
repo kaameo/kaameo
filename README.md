@@ -1,4 +1,4 @@
-# 👋 Hi there! I'm [Your Name]
+# 👋 Hi there! I'm Hong Jinsu
 
 I'm a passionate developer who loves learning new things and applying them in creative ways. My main interests are in backend development, problem-solving, and creating meaningful services for users.
 
@@ -26,7 +26,9 @@ Looking forward to connecting and collaborating!
 ## Velog
 - https://velog.io/@kaameo/posts
 ---
-> *"The only limit to our realization of tomorrow is our doubts of today."* - Franklin D. Roosevelt
+<!--- 
+> *"The only limit to our realization of tomorrow is our doubts of today."* - Franklin D. Roosevelt 
+--->
 
 
 <!---
