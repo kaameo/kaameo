@@ -6,6 +6,9 @@ I'm a passionate developer who loves learning new things and applying them in cr
 - Web backend development
 - Advanced C programming (including network programming)
 
+## ✏️ Education
+* [Department of Software](http://software.ajou.ac.kr/), Ajou University (2021.03. ~ )
+
 ## 💼 Skills
 - **Languages**: C, C++, Java
 - **Web**: HTML, CSS, JavaScript
