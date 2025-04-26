@@ -46,8 +46,9 @@ I aim to become a developer who designs and builds services that truly make user
 ---
 
 ## 📈 GitHub Stats
-<img align="left" src="https://github-readme-stats.vercel.app/api?username=kaameo&show_icons=true&theme=default&hide=issues&count_private=true" width="48%" height="200"/>
-<img align="right" src="https://github-readme-stats.vercel.app/api/top-langs/?username=kaameo&layout=compact&theme=default" width="48%" height="200"/>
+<img align="left" src="https://github-readme-stats.vercel.app/api?username=kaameo&show_icons=true&theme=default&hide=issues&count_private=true" width="48%"/>
+<img align="right" src="https://github-readme-stats.vercel.app/api/top-langs/?username=kaameo&layout=compact&theme=default" width="48%"/>
+<br/>
 <br/>
 <br/>
 
