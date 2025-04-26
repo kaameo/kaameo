@@ -46,14 +46,26 @@ I aim to become a developer who designs and builds services that truly make user
 ---
 
 ## 📈 GitHub Stats
-<img align="left" src="https://github-readme-stats.vercel.app/api?username=kaameo&show_icons=true&theme=default&hide=issues&count_private=true" width="48%"/>
-<img align="right" src="https://github-readme-stats.vercel.app/api/top-langs/?username=kaameo&layout=compact&theme=default" width="48%"/>
-<br/>
-<br/>
-<br/>
+
+<div align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=kaameo&show_icons=true&theme=default&hide=issues&count_private=true" width="48%" height="200px"/>
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=kaameo&layout=compact&theme=default" width="48%" height="200px"/>
+</div>
+
 
 ---
 
 ## 🚀 Featured Projects
-- 🔗 [Project Title 1 (Link)](https://github.com/your-project-link)
-- 🔗 [Project Title 2 (Link)](https://github.com/your-project-link)
+
+<div align="center">
+  
+  <a href="https://github.com/your-project-1">
+    <img width="400" alt="Project 1 Title" src="https://github-readme-stats.vercel.app/api/pin/?username=your-github-username&repo=your-project-1&theme=default" />
+  </a>
+
+  <a href="https://github.com/your-project-2">
+    <img width="400" alt="Project 2 Title" src="https://github-readme-stats.vercel.app/api/pin/?username=your-github-username&repo=your-project-2&theme=default" />
+  </a>
+
+</div>
+
