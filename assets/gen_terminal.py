@@ -21,7 +21,9 @@ from pathlib import Path
 
 # ── CONTENT ─────────────────────────────────────────────────────────────
 USER = "kaameo"
-FEED = "https://kaameo.github.io/rss.xml"
+BLOG = "https://kaameo.github.io"  # README wraps the image in a link to this URL
+FEED = f"{BLOG}/rss.xml"
+CLICK_HINT = "# ← click"  # comment typed after the final `open` command
 MAX_POSTS = 3
 
 SYSTEM = [  # (key, value)
@@ -39,8 +41,8 @@ STACK = [
 ABOUT = [  # **bold** → highlighted
     "대용량 트래픽과 **이벤트 기반 아키텍처**에 관심이 많습니다",
     "주로 **Spring Boot**와 **NestJS**로 서버를 만듭니다",
-    "**Kafka · K8s**를 직접 띄워 보며 분산 시스템을 공부합니다",
-    "요즘은 **Spring AI**로 벡터 검색·RAG를 실험하고 있습니다",
+    "**Kafka, Kubernetes** 등 분산 시스템을 공부합니다",
+    "요즘은 **Spring AI**로 벡터 검색, RAG를 실험하고 있습니다",
 ]
 
 # Pixel art of the GitHub avatar — one letter per pixel, see ART_STYLE
@@ -216,7 +218,7 @@ def info_rows(posts, stats):
         rows += [
             pair("Repos", [(f"{stats['repos']}", CYAN), *contributed], "Stars", [(f"{stats['stars']:,}", CYAN)]),
             pair("Commits", [(f"{stats['commits']:,}", CYAN)], "Followers", [(f"{stats['followers']:,}", CYAN)]),
-            pair("Contributions", [(f"{stats['contributions']:,}", GREEN), (" (1y)", MUTED)],
+            pair("Contributions", [(f"{stats['contributions']:,}", GREEN), (" /yr", MUTED)],
                  "Streak", [(f"{stats['streak']}d", GREEN), (f" / max {stats['longest']}d", MUTED)]),
         ]
     return rows
@@ -249,15 +251,20 @@ def render(posts, stats, now):
         s = f' style="{style}"' if style else ""
         out.append(f'<text x="{x:.1f}" y="{y}"{a}{s} opacity="0" xml:space="preserve">{reveal("opacity", at)}{inner}</text>')
 
+    def typed(parts, start, per_char=0.07):
+        """Reveal (text, color) parts one character at a time; returns (tspans, end time)."""
+        chars = [(ch, color) for s, color in parts for ch in s]
+        inner = "".join(f'<tspan fill="{color}" fill-opacity="0">{reveal("fill-opacity", start + i * per_char)}{escape(ch)}</tspan>'
+                        for i, (ch, color) in enumerate(chars))
+        return inner, start + len(chars) * per_char
+
     # Last login + typed command
     y = 64
     text(PAD_X, y, spans([(f"Last login: {now:%a %b %d %H:%M:%S} on ttys000", MUTED)]), 0.1)
     y += LINE_H + 4
-    cmd = "fastfetch"
-    typed = "".join(f'<tspan fill="{FG}" fill-opacity="0">{reveal("fill-opacity", t + 0.3 + i * 0.07)}{escape(c)}</tspan>'
-                    for i, c in enumerate(cmd))
-    text(PAD_X, y, spans(PROMPT) + typed, t)
-    t += 0.3 + len(cmd) * 0.07 + 0.35
+    cmd, t_end = typed([("fastfetch", FG)], t + 0.3)
+    text(PAD_X, y, spans(PROMPT) + cmd, t)
+    t = t_end + 0.35
 
     # fastfetch output: info column + avatar art, revealed top → bottom
     rows = info_rows(posts, stats)
@@ -281,12 +288,14 @@ def render(posts, stats, now):
         ay = art_top + i * ART_LINE
         text(art_x, ay, spans(runs), reveal_at(ay), style=f"font-size:{ART_FONT}px")
 
-    # final prompt with blinking cursor
+    # final prompt: `open <blog>  # ← click` typed out, then a blinking cursor
     t += 1.1
     y = top + content_h + LINE_H + 16
-    cursor = (f'<tspan fill="{FG}">█<animate attributeName="fill-opacity" values="1;1;0;0" '
-              f'keyTimes="0;0.5;0.5;1" dur="1s" repeatCount="indefinite"/></tspan>')
-    text(PAD_X, y, spans(PROMPT) + cursor, t)
+    cmd, t_end = typed([(f"open {BLOG}", FG), (f"  {CLICK_HINT} ", MUTED)], t + 0.4, per_char=0.05)
+    cursor = (f'<tspan fill="{FG}" fill-opacity="0">█<animate attributeName="fill-opacity" values="1;1;0;0" '
+              f'keyTimes="0;0.5;0.5;1" dur="1s" begin="{t_end:.2f}s" repeatCount="indefinite"/></tspan>')
+    text(PAD_X, y, spans(PROMPT) + cmd + cursor, t)
+    t = t_end
 
     h = y + 26
     desc = f"{USER} — " + ", ".join(v for _, v in SYSTEM + STACK) + ". " + " ".join(s.replace("**", "") for s in ABOUT)
