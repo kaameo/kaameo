@@ -1,0 +1,41 @@
+name: Update terminal
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 매일 09:00 KST
+  push:
+    branches: [main]
+    paths: [assets/gen_terminal.py]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: update-terminal
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # terminal.svg 커밋에 필요
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Render terminal.svg
+        run: python3 assets/gen_terminal.py
+        env:
+          # 비공개 레포 커밋까지 세려면 PAT를 PROFILE_TOKEN 시크릿으로 등록 (없으면 공개 기준)
+          GITHUB_TOKEN: ${{ secrets.PROFILE_TOKEN || github.token }}
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/terminal.svg
+          if git diff --cached --quiet; then
+            echo "terminal.svg unchanged"
+            exit 0
+          fi
+          git commit -m "chore: update terminal.svg"
+          git push
