@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Generate assets/terminal.svg — a neofetch-style terminal for the GitHub profile.
+"""Generate assets/terminal.svg — a fastfetch-style terminal for the GitHub profile.
 
 Static text lives in the CONTENT section. Blog posts (RSS) and GitHub stats are
 fetched at build time; .github/workflows/update-terminal.yml reruns this daily.
 
-Local run:  GITHUB_TOKEN=$(gh auth token) python3 assets/gen_terminal.py
-            (without GITHUB_TOKEN the stats section is skipped)
+Local run:  python3 assets/gen_terminal.py
+            (uses $GITHUB_TOKEN, else your `gh` CLI login; without either the stats section is skipped)
 """
 import json
 import os
+import subprocess
 import sys
 import unicodedata
 import urllib.request
@@ -27,18 +28,18 @@ SYSTEM = [  # (key, value)
     ("OS", "macOS"),
     ("Host", "South Korea"),
     ("Kernel", "Backend Engineer"),
-    ("IDE", "IntelliJ IDEA, DataGrip, VS Code"),
+    ("Blog", "kaameo.github.io"),
 ]
 STACK = [
-    ("Languages.Programming", "Java, Kotlin, TypeScript, Go"),
+    ("Languages.Programming", "Java, TypeScript, Go"),
     ("Frameworks", "Spring Boot, NestJS"),
-    ("Data & Messaging", "Kafka, Elasticsearch, PostgreSQL"),
+    ("Data & Messaging", "Kafka, PostgreSQL"),
     ("Infra", "Docker, Kubernetes"),
 ]
 ABOUT = [  # **bold** → highlighted
     "대용량 트래픽과 **이벤트 기반 아키텍처**에 관심이 많습니다",
     "주로 **Spring Boot**와 **NestJS**로 서버를 만듭니다",
-    "**Kafka · ES · K8s**를 직접 띄워 보며 분산 시스템을 공부합니다",
+    "**Kafka · K8s**를 직접 띄워 보며 분산 시스템을 공부합니다",
     "요즘은 **Spring AI**로 벡터 검색·RAG를 실험하고 있습니다",
 ]
 
@@ -252,17 +253,20 @@ def render(posts, stats, now):
     y = 64
     text(PAD_X, y, spans([(f"Last login: {now:%a %b %d %H:%M:%S} on ttys000", MUTED)]), 0.1)
     y += LINE_H + 4
-    cmd = "neofetch"
+    cmd = "fastfetch"
     typed = "".join(f'<tspan fill="{FG}" fill-opacity="0">{reveal("fill-opacity", t + 0.3 + i * 0.07)}{escape(c)}</tspan>'
                     for i, c in enumerate(cmd))
     text(PAD_X, y, spans(PROMPT) + typed, t)
     t += 0.3 + len(cmd) * 0.07 + 0.35
 
-    # neofetch output: info column + avatar art, revealed top → bottom
+    # fastfetch output: info column + avatar art, revealed top → bottom
     rows = info_rows(posts, stats)
     top = y + LINE_H + 12
     block_h = (len(rows) - 1) * LINE_H
-    reveal_at = lambda yy: t + (yy - top) / max(block_h, 1) * 0.9  # noqa: E731
+    art = art_rows()
+    art_h = (len(art) - 1) * ART_LINE
+    content_h = max(block_h, art_h)  # art may be taller than the info column (e.g. no stats)
+    reveal_at = lambda yy: t + (yy - top) / max(content_h, 1) * 0.9  # noqa: E731
 
     for i, row in enumerate(rows):
         ry = top + i * LINE_H
@@ -271,9 +275,7 @@ def render(posts, stats, now):
                 print(f"warning: row may overflow: {''.join(s for s, _ in parts)!r}", file=sys.stderr)
             text(x, ry, spans(parts), reveal_at(ry), anchor)
 
-    art = art_rows()
-    art_h = (len(art) - 1) * ART_LINE
-    art_top = top + (block_h - art_h) // 2
+    art_top = top + max(block_h - art_h, 0) // 2  # never above the output block
     art_x = PAD_X + (INFO_X - PAD_X - 40 - len(AVATAR.strip().splitlines()[0]) * ART_PX_W * ART_FONT * 0.6) / 2
     for i, runs in enumerate(art):
         ay = art_top + i * ART_LINE
@@ -281,16 +283,16 @@ def render(posts, stats, now):
 
     # final prompt with blinking cursor
     t += 1.1
-    y = top + block_h + LINE_H + 16
+    y = top + content_h + LINE_H + 16
     cursor = (f'<tspan fill="{FG}">█<animate attributeName="fill-opacity" values="1;1;0;0" '
               f'keyTimes="0;0.5;0.5;1" dur="1s" repeatCount="indefinite"/></tspan>')
     text(PAD_X, y, spans(PROMPT) + cursor, t)
 
     h = y + 26
-    desc = f"{USER} — " + ", ".join(v for _, v in SYSTEM[2:3] + STACK) + ". " + " ".join(s.replace("**", "") for s in ABOUT)
+    desc = f"{USER} — " + ", ".join(v for _, v in SYSTEM + STACK) + ". " + " ".join(s.replace("**", "") for s in ABOUT)
     nl = "\n"
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{h}" viewBox="0 0 {W} {h}" role="img" aria-labelledby="t d">
-<title id="t">{USER}@github — neofetch</title>
+<title id="t">{USER}@github — fastfetch</title>
 <desc id="d">{escape(desc)}</desc>
 <style>text {{ font-family: {FONT}; font-size: {FONT_SIZE}px; white-space: pre; }}</style>
 <rect x="0.5" y="0.5" width="{W - 1}" height="{h - 1}" rx="10" fill="#0d1117" stroke="#30363d"/>
@@ -303,10 +305,19 @@ def render(posts, stats, now):
 """, t
 
 
+def local_gh_token():
+    """Fallback for local runs: reuse the GitHub CLI login if available."""
+    try:
+        res = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return res.stdout.strip() or None if res.returncode == 0 else None
+
+
 def main():
-    token = os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("GITHUB_TOKEN") or local_gh_token()
     if not token:
-        print("warning: GITHUB_TOKEN not set — skipping stats", file=sys.stderr)
+        print("warning: no GITHUB_TOKEN and no `gh` login — skipping stats", file=sys.stderr)
     svg, end = render(blog_posts(), github_stats(token) if token else None, datetime.now(KST))
     out = Path(__file__).with_name("terminal.svg")
     out.write_text(svg, encoding="utf-8")
