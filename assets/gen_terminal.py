@@ -45,30 +45,47 @@ ABOUT = [  # **bold** → highlighted
     "요즘은 **Spring AI**로 벡터 검색, RAG를 실험하고 있습니다",
 ]
 
-# Pixel art of the GitHub avatar — one letter per pixel, see ART_STYLE
-AVATAR = """
-....AAAA....
-..AACCCCAA..
-.ACCCCCCCCA.
-AAAAAAAAAAAA
-.ABBBBBBBBA.
-.ABAABBAABA.
-.ABAABBAABA.
-.ABBBDDBBBA.
-.ABBBDDBBBA.
-.ABBAAAABBA.
-AABBBBBBBBAA
-ABBAAAAAABBA
-ABBDDDDDDBBA
-ABCBBBBBCBBA
-ABBBBCBBBBBA
-AAAAAAAAAAAA
+# Capybara with a tangerine hat (from icons/귤 모자를 쓴 통통한 카피바라.png) — one letter per cell, see ART_STYLE
+ART = """
+.................................LLLLLL.......................
+................................LLLLO.........................
+.............................OOOOOOOO.........................
+.........................TTTTTTTTTTTO.........................
+........................TTBTTTTTTTTTT.........................
+.......................OTTTTTTTTTTTTTT........................
+...............OMMMM...OTTTTTTTTTTTTTOOOMMMM..................
+.............OMCMCMMMOOOOOOTTTTTTTOOOOBOOOOMM.................
+.............OCMMMMMBBBBBBOOOOOOOOOBBBBBBBOOOO................
+.............OOMMMBBBBBBBBBBBBBBBBBBBBBBBBBBOO................
+.............OOOOBBBBBBBBBBBBBBBBBBBBBBBBBBBBB................
+.............BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB...............
+...........OBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBOOOO..............
+..........BBBBBBBBBBBBBBOOOOOOBBBMMMMMMMMMMBOOOOBO............
+.........OBBBBBBBBBCCCBBBBBBBBBBMMMMMOMMMOMMMBBBCCC...........
+........OBBBBBBBBCCCCCCCBBBBBBBMMMMMMOOOOOMMMBBBCCCO..........
+.......OBBBBBBBBBCCCCCCBBBBBBBMMMMMMMMMOOMMMMMBBBBBB..........
+......BBBBBBBBBBBBBBBBBBBBBBBBMMMMMMMMMOMMMMMBBBBBBB..........
+....OBBBBBBBBBBBBBBBBBBBBBBBBBBMMMMMMMMMMMMMMBBBBBBO..........
+...BBBBBBBBBBBBBBBBBBBBBBBBBBBBBMMMMMMMMMMMMBBBBBBOO..........
+..OBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB...P..PPPPPPPPPPPPPPP
+.OBBBBBBBBBBBBBBBBBBBBOBBBBBBBBBBBBBBBBB..PPPPPPPPPPPPPPPPPPPP
+.BBBBBBBBBBBBBBBBBBBOOOOOOOOOBBBBBBBBBBB.PPPPPPPPPPPPPPPPPPPP.
+OBBBBBBBBBBBBBBBBBBBBBBBBBBOOOOBBBOOOO..PPPPPPPPPPPPPPPPPPPPP.
+OBBBBBBBBBBBBBBBBBBBBBBBBBBBBOOOOOOMMM..PPPPPPPPPPPPPPPPPPPP..
+OBBBBBBBBBBBBBBBBBBBBBBBBMMMMMOOOOMMMM.PPPPPPPPPPPPPPPPPPPP...
+.OBBBBBBBOOBBBBBBBBBBBBBMMOOOOOOOOMOOOPPPPPPPPPPPPPPPPPPKKK...
+..OBBBBBBBOOOBBBBBBBBOOOOOOOOOOOOOOOOPPPPPPPPPPKKKKKKKKKKK....
+....OBBBBBBBOOOOOOOOKKKKKKKKKKKKKKKKOPPPPPPPPKKKKKKKKKKKK.....
 """
-ART_STYLE = {  # letter → (char, color); each pixel is ART_PX_W chars × ART_PX_H rows
-    "A": ("#", "#8ec5e8"),  # outline
-    "B": ("%", "#8a8f98"),  # face
-    "C": ("=", "#6e7681"),  # hat
-    "D": ("+", "#e6edf3"),  # nose · teeth
+ART_STYLE = {  # letter → (char, color); each cell is ART_PX_W chars × ART_PX_H rows, '.' = empty
+    "O": (":", "#7a5543"),  # outline (eyes, mouth, arm)
+    "B": ("%", "#e6965c"),  # body
+    "M": ("#", "#b36c41"),  # muzzle · ears · paws
+    "C": ("*", "#f08a5d"),  # cheeks
+    "T": ("@", "#fc7a02"),  # tangerine
+    "L": ("&", "#6fbf40"),  # leaf
+    "P": ("=", "#d5cccc"),  # laptop lid
+    "K": ("-", "#9e9696"),  # laptop base · shadow
 }
 
 # ── STYLE & LAYOUT ──────────────────────────────────────────────────────
@@ -81,7 +98,7 @@ FONT = ("ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation M
 
 FONT_SIZE, LINE_H = 14, 20
 CELL = FONT_SIZE * 0.6                      # monospace advance width
-ART_FONT, ART_LINE, ART_PX_W, ART_PX_H = 12, 14, 4, 2
+ART_FONT, ART_LINE, ART_PX_W, ART_PX_H = 9, 10, 1, 1
 PAD_X, W = 24, 980
 INFO_X = 410                               # left edge of the info column
 INFO_END = W - PAD_X                       # right edge (values are right-aligned)
@@ -226,7 +243,7 @@ def info_rows(posts, stats):
 
 def art_rows():
     rows = []
-    for line in AVATAR.strip().splitlines():
+    for line in ART.strip().splitlines():
         runs = []
         for px in line:
             ch, color = ART_STYLE.get(px, (" ", FG))
@@ -283,7 +300,7 @@ def render(posts, stats, now):
             text(x, ry, spans(parts), reveal_at(ry), anchor)
 
     art_top = top + max(block_h - art_h, 0) // 2  # never above the output block
-    art_x = PAD_X + (INFO_X - PAD_X - 40 - len(AVATAR.strip().splitlines()[0]) * ART_PX_W * ART_FONT * 0.6) / 2
+    art_x = PAD_X + (INFO_X - PAD_X - 40 - len(ART.strip().splitlines()[0]) * ART_PX_W * ART_FONT * 0.6) / 2
     for i, runs in enumerate(art):
         ay = art_top + i * ART_LINE
         text(art_x, ay, spans(runs), reveal_at(ay), style=f"font-size:{ART_FONT}px")
