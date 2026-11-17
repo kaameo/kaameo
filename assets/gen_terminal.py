@@ -25,10 +25,10 @@ FEED = "https://kaameo.github.io/rss.xml"
 MAX_POSTS = 3
 
 SYSTEM = [  # (key, value)
-    ("OS", "macOS"),
     ("Host", "South Korea"),
-    ("Kernel", "Backend Engineer"),
-    ("Blog", "kaameo.github.io"),
+    ("Kernel", "Software Engineer"),
+    ("Email", "kaameo12@gmail.com"),
+    ("LinkedIn", "linkedin.com/in/jinsu-hong"),
 ]
 STACK = [
     ("Languages.Programming", "Java, TypeScript, Go"),
@@ -199,7 +199,7 @@ def plain(parts):
 def info_rows(posts, stats):
     rows = [header(f"{USER}@github", BLUE, prefix="")]
     rows += [kv(k, v) for k, v in SYSTEM] + [None]
-    rows += [kv(k, v) for k, v in STACK] + [None]
+    rows += [header("Skills")] + [kv(k, v) for k, v in STACK] + [None]
     rows += [header("About")] + [plain([(". ", DIM), *rich(s)]) for s in ABOUT] + [None]
     rows += [header("Blog")]
     rows += [kv(f"{d:%Y-%m-%d}", None, key_color=MUTED, value_parts=[(t, FG)]) for d, t in posts] \
