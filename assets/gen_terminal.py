@@ -104,6 +104,7 @@ INFO_X = 410                               # left edge of the info column
 INFO_END = W - PAD_X                       # right edge (values are right-aligned)
 INFO_COLS = int((INFO_END - INFO_X) / CELL)
 COL_SPLIT = INFO_X + (INFO_END - INFO_X) * 0.55  # two-column stats rows
+MIN_DOTS, ELLIPSIS = 2, "…"                # dot leader minimum · marker for values cut to fit
 KST = timezone(timedelta(hours=9), "KST")
 
 
@@ -197,12 +198,31 @@ def spans(parts) -> str:
     return "".join(f'<tspan fill="{c}">{escape(s)}</tspan>' for s, c in parts)
 
 
+def clip(parts, max_w):
+    """Cut (text, color) parts from the end so they fit in max_w px, ending with '…' if anything was cut."""
+    if width("".join(s for s, _ in parts)) <= max_w:
+        return parts
+    out, room = [], max_w - width(ELLIPSIS)
+    for s, color in parts:
+        keep = ""
+        for ch in s:
+            if width(ch) > room:
+                break
+            keep, room = keep + ch, room - width(ch)
+        out.append((keep, color))
+        if keep != s:
+            break
+    out[-1] = (out[-1][0].rstrip() + ELLIPSIS, out[-1][1])
+    return [(s, c) for s, c in out if s]
+
+
 # An info row is a list of text pieces: (x, anchor, parts)
 def kv(key, value, x0=INFO_X, x1=INFO_END, key_color=ORANGE, value_parts=None):
-    value_parts = value_parts or [(value, CYAN)]
     head = f". {key}: "
+    # long values (e.g. blog titles) are cut so the right-aligned value never runs into the key
+    value_parts = clip(value_parts or [(value, CYAN)], (x1 - x0) - width(head) - CELL * (MIN_DOTS + 1))
     room = (x1 - x0) - width(head) - width("".join(s for s, _ in value_parts)) - CELL
-    dots = "." * max(int(room / CELL), 2)
+    dots = "." * max(int(room / CELL + 1e-6), MIN_DOTS)
     return [(x0, "start", [(". ", DIM), (f"{key}:", key_color), (" " + dots, DIM)]), (x1, "end", value_parts)]
 
 
