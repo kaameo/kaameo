@@ -98,6 +98,7 @@ FONT = ("ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation M
 
 FONT_SIZE, LINE_H = 14, 20
 CELL = FONT_SIZE * 0.6                      # monospace advance width
+WIDE = FONT_SIZE * 0.87                     # Hangul advance in the fallback font (Apple SD Gothic Neo ≈ 0.865em)
 ART_FONT, ART_LINE, ART_PX_W, ART_PX_H = 9, 10, 1, 1
 PAD_X, W = 24, 980
 INFO_X = 410                               # left edge of the info column
@@ -185,8 +186,8 @@ def github_stats(token):
 
 # ── TEXT HELPERS ────────────────────────────────────────────────────────
 def width(text: str) -> float:
-    """Approximate rendered width; wide (CJK) glyphs are over-estimated so dot leaders never collide."""
-    return sum(FONT_SIZE if unicodedata.east_asian_width(c) in "WF" else CELL for c in text)
+    """Approximate rendered width, so dot leaders end the same distance before every value."""
+    return sum(WIDE if unicodedata.east_asian_width(c) in "WF" else CELL for c in text)
 
 
 def rich(s: str, base=FG, hi=ORANGE):
@@ -216,14 +217,24 @@ def clip(parts, max_w):
     return [(s, c) for s, c in out if s]
 
 
-# An info row is a list of text pieces: (x, anchor, parts)
+def is_wide(text: str) -> bool:
+    return any(unicodedata.east_asian_width(c) in "WF" for c in text)
+
+
+# An info row is a list of text pieces: (x, anchor, parts[, fit]) — fit pins the rendered width (SVG textLength)
 def kv(key, value, x0=INFO_X, x1=INFO_END, key_color=ORANGE, value_parts=None):
     head = f". {key}: "
     # long values (e.g. blog titles) are cut so the right-aligned value never runs into the key
     value_parts = clip(value_parts or [(value, CYAN)], (x1 - x0) - width(head) - CELL * (MIN_DOTS + 1))
-    room = (x1 - x0) - width(head) - width("".join(s for s, _ in value_parts)) - CELL
+    shown = "".join(s for s, _ in value_parts)
+    room = (x1 - x0) - width(head) - width(shown) - CELL
     dots = "." * max(int(room / CELL + 1e-6), MIN_DOTS)
-    return [(x0, "start", [(". ", DIM), (f"{key}:", key_color), (" " + dots, DIM)]), (x1, "end", value_parts)]
+    key_piece = (x0, "start", [(". ", DIM), (f"{key}:", key_color), (" " + dots, DIM)])
+    if not is_wide(shown):
+        return [key_piece, (x1, "end", value_parts)]
+    # Hangul is off the monospace grid: pin the value's width (letter spacing only) so it starts one cell after the dots
+    fit = (x1 - x0) - width(head) - len(dots) * CELL - CELL
+    return [key_piece, (x1, "end", value_parts, fit)]
 
 
 def header(title, title_color=FG, prefix="- "):
@@ -283,10 +294,11 @@ def render(posts, stats, now):
     def reveal(attr, at):
         return f'<set attributeName="{attr}" to="1" begin="{at:.2f}s" fill="freeze"/>'
 
-    def text(x, y, inner, at, anchor="start", style=""):
+    def text(x, y, inner, at, anchor="start", style="", fit=None):
         a = f' text-anchor="{anchor}"' if anchor != "start" else ""
         s = f' style="{style}"' if style else ""
-        out.append(f'<text x="{x:.1f}" y="{y}"{a}{s} opacity="0" xml:space="preserve">{reveal("opacity", at)}{inner}</text>')
+        f = f' textLength="{fit:.1f}" lengthAdjust="spacing"' if fit else ""
+        out.append(f'<text x="{x:.1f}" y="{y}"{a}{s}{f} opacity="0" xml:space="preserve">{reveal("opacity", at)}{inner}</text>')
 
     def typed(parts, start, per_char=0.07):
         """Reveal (text, color) parts one character at a time; returns (tspans, end time)."""
@@ -314,10 +326,10 @@ def render(posts, stats, now):
 
     for i, row in enumerate(rows):
         ry = top + i * LINE_H
-        for x, anchor, parts in row or []:
+        for x, anchor, parts, *fit in row or []:
             if anchor == "start" and x == INFO_X and width("".join(s for s, _ in parts)) > INFO_END - INFO_X:
                 print(f"warning: row may overflow: {''.join(s for s, _ in parts)!r}", file=sys.stderr)
-            text(x, ry, spans(parts), reveal_at(ry), anchor)
+            text(x, ry, spans(parts), reveal_at(ry), anchor, fit=fit[0] if fit else None)
 
     art_top = top + max(block_h - art_h, 0) // 2  # never above the output block
     art_x = PAD_X + (INFO_X - PAD_X - 40 - len(ART.strip().splitlines()[0]) * ART_PX_W * ART_FONT * 0.6) / 2
