@@ -261,14 +261,14 @@ def render(posts, stats, now):
     # Last login + typed command
     y = 64
     text(PAD_X, y, spans([(f"Last login: {now:%a %b %d %H:%M:%S} on ttys000", MUTED)]), 0.1)
-    y += LINE_H + 4
+    y += LINE_H  # every terminal line sits on the LINE_H grid
     cmd, t_end = typed([("fastfetch", FG)], t + 0.3)
     text(PAD_X, y, spans(PROMPT) + cmd, t)
     t = t_end + 0.35
 
     # fastfetch output: info column + avatar art, revealed top → bottom
     rows = info_rows(posts, stats)
-    top = y + LINE_H + 12
+    top = y + LINE_H  # output starts on the very next line
     block_h = (len(rows) - 1) * LINE_H
     art = art_rows()
     art_h = (len(art) - 1) * ART_LINE
@@ -290,7 +290,7 @@ def render(posts, stats, now):
 
     # final prompt: `open <blog>  # ← click` typed out, then a blinking cursor
     t += 1.1
-    y = top + content_h + LINE_H + 16
+    y = top + content_h + LINE_H * 2  # one blank line after the output
     cmd, t_end = typed([(f"open {BLOG}", FG), (f"  {CLICK_HINT} ", MUTED)], t + 0.4, per_char=0.05)
     cursor = (f'<tspan fill="{FG}" fill-opacity="0">█<animate attributeName="fill-opacity" values="1;1;0;0" '
               f'keyTimes="0;0.5;0.5;1" dur="1s" begin="{t_end:.2f}s" repeatCount="indefinite"/></tspan>')
